@@ -9,10 +9,10 @@ VC = 44.097 * 0.0727 #ft3/lbmole
 OMEGA = 0.153 #1
 #Other Constants
 V = 100 #Magnitude of the volume vector
-NT = 6 #Number of isotherms to be worked with
 T = np.array([60, 100, 140, 180, 206.6, 220]) #Temperature in F
-NPS = 4 #Number of PSat Estimation values
+NT = np.size(T) #Number of isotherms to be worked with
 PSE = np.array([108.83, 191.35, 311.86, 478.87]) #Estimated Saturaion Pressure values
+NPS = np.size(PSE) #Number of PSat Estimation values
 
 R = 10.732 #psi*ft3/(lbmol*R)
 
