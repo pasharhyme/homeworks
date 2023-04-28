@@ -1,12 +1,16 @@
 #Construct isotherms of a pure hydrocarbon component using Soave-Redlich-Kwong equation of state
 import numpy as np
 import matplotlib.pyplot as plt
+from src.components import *
+
+prompt = "propane"
+properties = constants(prompt, C) #Fetch constants for the requested hydrocarbon
 
 #Constants for the component that will be studied
-TC = 206.06 + 460 #R
-PC = 616.0 #psi
-VC = 44.097 * 0.0727 #ft3/lbmole
-OMEGA = 0.153 #1
+PC = properties[0] #psi
+TC = properties[1] #R
+VC = properties[2] #ft3/lbmole
+OMEGA = properties[3] #1
 #Other Constants
 V = 100 #Magnitude of the volume vector
 T = np.array([60, 100, 140, 180, 206.6, 220]) #Temperature in F
@@ -68,7 +72,7 @@ def srk_eos_psat(ttx, trx):
     PSEPlot = np.array([PSE,] * 3).T #Reformat estimation values to work with 3 roots
     return roots
 
-def psat_corr(trx):
+def psat_corr():
     trcorr = np.linspace(0.4, 1.0, 100 * 10)
     tcorr = (trcorr * TC) - 460
     a = (5.92714) - (6.09648/trcorr) - (1.28866*np.log(trcorr)) + (0.16934*(trcorr)**6)
@@ -93,7 +97,7 @@ for i in range(NPS):
     axes[1].semilogx(srk_eos_psat(tt, tr)[i, :], PSEPlot[i, :], "o:k")
 
 #[Subplot 3] for comparing estimated and calculated vapor pressure values
-axes[2].plot(psat_corr(tr)[:,0], psat_corr(tr)[:,1], label="PSat Correlated")
+axes[2].plot(psat_corr()[:,0], psat_corr()[:,1], label="PSat Correlated")
 axes[2].scatter(T[0:np.size(PSE)], PSE, color="red", label="PSat Estimated")
 
 #Set rules for first two subplots
