@@ -1,7 +1,7 @@
 #Construct isotherms of a pure hydrocarbon component using Soave-Redlich-Kwong equation of state
-import numpy as np
-import matplotlib.pyplot as plt
-from src.components import *
+import numpy as np #Dependency => pip install numpy
+import matplotlib.pyplot as plt #Dependency => pip install matplotlib
+from src.components import * #Imports relevant properties of pure components
 
 prompt = "propane"
 properties = constants(prompt, C) #Fetch constants for the requested hydrocarbon
@@ -79,7 +79,7 @@ def srk_eos_psat(): #PSat calculator using Soave-Redlich-Kwong Equation of State
     return roots
 
 def psat_corr(): #PSat value calculator using correlations
-    trcorr = np.linspace(0.4, 1.0, 100 * 10) #Vector of reduced temperature
+    trcorr = np.linspace(0.4, 1.0, V * 10) #Vector of reduced temperature
     tcorr = (trcorr * TC) - 460 #Converts reduced temperature to F
 
     a = (5.92714) - (6.09648/trcorr) - (1.28866*np.log(trcorr)) + (0.16934*(trcorr)**6)
@@ -92,7 +92,6 @@ def psat_corr(): #PSat value calculator using correlations
     return Psat
 
 def psat_error(): #PSat estimation error calculator
-
     deltap = np.zeros(NPS)
     for i in range(NPS):
         p1 = np.average(Psat[np.where(np.fix(Psat[:,0]) == T[i])[0],:][:,1])
@@ -133,5 +132,5 @@ axes[2].legend(loc = 0)
 
 plt.show() #Render the figure
 
-print("Area Difference Error:", abs(adiff.T[0])) #Report Area difference between Pressure and PSat plots as error
-print("PSat Difference Error:", abs(psat_error())) #Report vapor pressure difference between correlated and estimated as error
+print("Area Difference Error :", abs(adiff.T[0])) #Report Area difference between Pressure and PSat plots as error
+print("PSat Difference Error :", abs(psat_error())) #Report vapor pressure difference between correlated and estimated as error
