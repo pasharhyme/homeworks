@@ -78,6 +78,56 @@ def srk_eos_psat(): #PSat calculator using Soave-Redlich-Kwong Equation of State
 
     return roots
 
+def vdw_eos():
+    p = np.zeros((NT, V * 10))
+    a = (27/64) * R**2 * TC**2 / PC
+    b = (1/8) * R * TC / PC
+
+    for i in range(NT): p[i, :] = (R * tt[i] / (v - b)) - (a / v**2)
+
+    return p
+
+def vdw_eos_psat():
+    c = np.zeros((NPS, NPS)) #Array to store coefficients for every PSE
+    a = (27/64) * R**2 * TC**2 / PC
+    b = (1/8) * R * TC / PC
+
+    for i in range(NPS): #Generate coefficients for each PSE
+        c[i, 0] = PSE[i]
+        c[i, 1] = -((b * PSE[i]) + (R * tt[i]))
+        c[i, 2] = a
+        c[i, 3] = -(a * b)
+    
+    roots = np.zeros((NPS, 3))
+    for i in range(NPS): roots[i, :] = np.real(np.roots(c[i, :].T)) #Calculate roots of the equation for each PSE
+    roots = np.fliplr(roots)
+
+    ai = np.zeros((NPS, 3)) #Roots of the integral of vdw eos
+    for i in range(NPS): #Generate I values
+        ai[i, 0] = (R*tt[i]*np.log(abs(roots[i, 0]-b))) + (a / np.log(abs((b/roots[i,0]))))
+        ai[i, 1] = (R*tt[i]*np.log(abs(roots[i, 1]-b))) + (a / np.log(abs((b/roots[i,1]))))
+        ai[i, 2] = (R*tt[i]*np.log(abs(roots[i, 2]-b))) + (a / np.log(abs((b/roots[i,2]))))
+
+    aj = np.zeros((NPS, 2)) #Area under Psat line
+    for i in range(NPS):
+        aj[i, 0] = (roots[i, 1] - roots[i, 0]) * PSE[i]
+        aj[i, 1] = (roots[i, 2] - roots[i, 1]) * PSE[i]
+
+    aa = np.zeros((NPS, 2)) #Area between loops and Psat line
+    for i in range(NPS):
+        aa[i, 0] = aj[i, 0] - (ai[i, 1] - ai[i, 0])
+        aa[i, 1] = (ai[i, 2] - ai[i, 1]) - aj[i, 1]
+
+    global adiff
+    adiff = np.zeros((NPS, 1)) #Area difference should be 0 to obtain correct Psat values
+    for i in range(NPS): adiff[i, 0] = aa[i, 0] - aa[i, 1]
+
+    global PSEPlot
+    PSEPlot = np.array([PSE,] * 3).T #Reformat estimation values to work with 3 roots
+
+
+    return roots
+
 def psat_corr(): #PSat value calculator using correlations
     trcorr = np.linspace(0.4, 1.0, V * 10) #Vector of reduced temperature
     tcorr = (trcorr * TC) - 460 #Converts reduced temperature to F
