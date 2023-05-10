@@ -1,10 +1,26 @@
-#Construct isotherms of a pure hydrocarbon component using Soave-Redlich-Kwong equation of state
+#Equation of State Calculator for Pure Component Systems
 import numpy as np #Dependency => pip install numpy
 import matplotlib.pyplot as plt #Dependency => pip install matplotlib
-from src.components import * #Imports relevant properties of pure components
+from src.selector import * #Imports relevant properties of hydrocarbon components
 
-prompt = "propane"
-properties = constants(prompt, C) #Fetch constants for the requested hydrocarbon
+"""
+Name of the component that will be examined.
+Refer to src/selector.py for available components.
+"""
+component = "propane" # Needs manual input.
+properties = constants(component, C) #Fetch constants for the requested hydrocarbon
+
+"""
+Type of the eos model that will perform the calculations.
+Refer to the list below for available eos models:
+
+1 = Soave-Redlich-Kwong Equation of State
+2 = Van der Waals Equation of State
+3 = Peng Robinson Equation of State
+"""
+number = "1" # Needs manual input.
+eos_model = eos(number)
+eos_model_psat = eos(number) + "_psat"
 
 #Constants for the component that will be studied
 PC = properties[0] #psi
@@ -14,9 +30,9 @@ OMEGA = properties[3] #1
 
 #Other Constants
 V = 100 #Magnitude of the volume vector
-T = np.array([60, 100, 140, 180, 206.6, 220]) #Temperature in F
+T = np.array([60, 100, 140, 180, 206.6, 220]) #Temperature in F. Needs manual input.
 NT = np.size(T) #Number of isotherms to be worked with
-PSE = np.array([108.83, 191.35, 311.86, 478.87]) #Estimated Saturaion Pressure values
+PSE = np.array([108.83, 191.35, 311.86, 478.87]) #Estimated Saturaion Pressure values. Needs manual input.
 NPS = np.size(PSE) #Number of PSat Estimation values
 
 R = 10.732 #psi*ft3/(lbmol*R)
@@ -66,8 +82,8 @@ def srk_eos_psat(): #PSat calculator using Soave-Redlich-Kwong Equation of State
 
     aa = np.zeros((NPS, 2)) #Area between loops and Psat line
     for i in range(NPS):
-        aa[i, 0] = aj[i, 0] - (ai[i, 1] - ai[i, 0])
-        aa[i, 1] = (ai[i, 2] - ai[i, 1]) - aj[i, 1]
+        aa[i, 0] = aj[i, 0] - (ai[i, 1] - ai[i, 0]) #Area of the left of the curve
+        aa[i, 1] = (ai[i, 2] - ai[i, 1]) - aj[i, 1] #Area of the right of the curve
 
     global adiff
     adiff = np.zeros((NPS, 1)) #Area difference should be 0 to obtain correct Psat values
@@ -78,7 +94,7 @@ def srk_eos_psat(): #PSat calculator using Soave-Redlich-Kwong Equation of State
 
     return roots
 
-def vdw_eos():
+def vdw_eos(): #Van der Waals Equation of State
     p = np.zeros((NT, V * 10))
     a = (27/64) * R**2 * TC**2 / PC
     b = (1/8) * R * TC / PC
@@ -87,7 +103,7 @@ def vdw_eos():
 
     return p
 
-def vdw_eos_psat():
+def vdw_eos_psat(): #PSat calculator using Van der Waals Equation of State
     c = np.zeros((NPS, NPS)) #Array to store coefficients for every PSE
     a = (27/64) * R**2 * TC**2 / PC
     b = (1/8) * R * TC / PC
@@ -97,16 +113,16 @@ def vdw_eos_psat():
         c[i, 1] = -((b * PSE[i]) + (R * tt[i]))
         c[i, 2] = a
         c[i, 3] = -(a * b)
-    
+
     roots = np.zeros((NPS, 3))
     for i in range(NPS): roots[i, :] = np.real(np.roots(c[i, :].T)) #Calculate roots of the equation for each PSE
     roots = np.fliplr(roots)
 
     ai = np.zeros((NPS, 3)) #Roots of the integral of vdw eos
     for i in range(NPS): #Generate I values
-        ai[i, 0] = (R*tt[i]*np.log(abs(roots[i, 0]-b))) + (a / np.log(abs((b/roots[i,0]))))
-        ai[i, 1] = (R*tt[i]*np.log(abs(roots[i, 1]-b))) + (a / np.log(abs((b/roots[i,1]))))
-        ai[i, 2] = (R*tt[i]*np.log(abs(roots[i, 2]-b))) + (a / np.log(abs((b/roots[i,2]))))
+        ai[i, 0] = (R*tt[i]*np.log(abs(roots[i, 0]-b))) + (a / np.log(abs((roots[i,0]))))
+        ai[i, 1] = (R*tt[i]*np.log(abs(roots[i, 1]-b))) + (a / np.log(abs((roots[i,1]))))
+        ai[i, 2] = (R*tt[i]*np.log(abs(roots[i, 2]-b))) + (a / np.log(abs((roots[i,2]))))
 
     aj = np.zeros((NPS, 2)) #Area under Psat line
     for i in range(NPS):
@@ -115,8 +131,62 @@ def vdw_eos_psat():
 
     aa = np.zeros((NPS, 2)) #Area between loops and Psat line
     for i in range(NPS):
-        aa[i, 0] = aj[i, 0] - (ai[i, 1] - ai[i, 0])
-        aa[i, 1] = (ai[i, 2] - ai[i, 1]) - aj[i, 1]
+        aa[i, 0] = aj[i, 0] - (ai[i, 1] - ai[i, 0]) #Area of the left of the curve
+        aa[i, 1] = (ai[i, 2] - ai[i, 1]) - aj[i, 1] #Area of the right of the curve
+
+    global adiff
+    adiff = np.zeros((NPS, 1)) #Area difference should be 0 to obtain correct Psat values
+    for i in range(NPS): adiff[i, 0] = aa[i, 0] - aa[i, 1]
+
+    global PSEPlot
+    PSEPlot = np.array([PSE,] * 3).T #Reformat estimation values to work with 3 roots
+
+
+    return roots
+
+def pr_eos(): #Peng Robinson Equation of State
+    p = np.zeros((NT, V * 10))
+    a = 0.45724 * R**2 * TC**2 / PC
+    b = 0.07780 * R * TC / PC
+    m = 0.3746 + 1.5423 * OMEGA - 0.2699 * OMEGA**2
+    alpha = (1 + m * (1 - np.sqrt(tr)))**2
+
+    for i in range(NT): p[i, :] = (R * tt[i] / (v - b)) - (a * alpha[i] / (v * (v + b) + b * (v - b)))
+
+    return p
+
+def pr_eos_psat(): #PSat calculator using Peng-Robinson Equation of State
+    c = np.zeros((NPS, NPS)) #Array to store coefficients for every PSE
+    a = 0.45724 * R**2 * TC**2 / PC
+    b = 0.07780 * R * TC / PC
+    m = 0.3746 + 1.5423 * OMEGA - 0.2699 * OMEGA**2
+    alpha = (1 + m * (1 - np.sqrt(tr)))**2
+
+    for i in range(NPS): #Generate coefficients for each PSE
+        c[i, 0] = PSE[i]
+        c[i, 1] = b * PSE[i] - R * tt[i]
+        c[i, 2] = (a * alpha[i]) - (2* b * R * tt[i]) - (3 * b**2 * PSE[i])
+        c[i, 3] = -(a * b * alpha[i]) + (b**2 * R * tt[i]) + (b**3 * PSE[i])
+
+    roots = np.zeros((NPS, 3))
+    for i in range(NPS): roots[i, :] = np.real(np.roots(c[i, :].T)) #Calculate roots of the equation for each PSE
+    roots = np.fliplr(roots)
+
+    ai = np.zeros((NPS, 3)) #Roots of the integral of pr eos
+    for i in range(NPS): #Generate I values
+        ai[i, 0] = (R*tt[i]*np.log(abs(roots[i, 0]-b))) - ((a*alpha[i]) * np.log(abs(((2*roots[i,0]-2**(3/2)*b+2*b)/(2*roots[i,0]+2**(3/2)*b+2*b)))/2**(3/2)*b))
+        ai[i, 1] = (R*tt[i]*np.log(abs(roots[i, 1]-b))) - ((a*alpha[i]) * np.log(abs(((2*roots[i,1]-2**(3/2)*b+2*b)/(2*roots[i,1]+2**(3/2)*b+2*b)))/2**(3/2)*b))
+        ai[i, 2] = (R*tt[i]*np.log(abs(roots[i, 2]-b))) - ((a*alpha[i]) * np.log(abs(((2*roots[i,2]-2**(3/2)*b+2*b)/(2*roots[i,2]+2**(3/2)*b+2*b)))/2**(3/2)*b))
+
+    aj = np.zeros((NPS, 2)) #Area under Psat line
+    for i in range(NPS):
+        aj[i, 0] = (roots[i, 1] - roots[i, 0]) * PSE[i]
+        aj[i, 1] = (roots[i, 2] - roots[i, 1]) * PSE[i]
+
+    aa = np.zeros((NPS, 2)) #Area between loops and Psat line
+    for i in range(NPS):
+        aa[i, 0] = aj[i, 0] - (ai[i, 1] - ai[i, 0]) #Area of the left of the curve
+        aa[i, 1] = (ai[i, 2] - ai[i, 1]) - aj[i, 1] #Area of the right of the curve
 
     global adiff
     adiff = np.zeros((NPS, 1)) #Area difference should be 0 to obtain correct Psat values
@@ -155,11 +225,11 @@ FSIZE = 5
 fig.set_size_inches(FSIZE * 3, FSIZE)
 
 #[Subplot 1] for pressure-volume graph
-for i in range(NT): axes[0].semilogx(v, srk_eos()[i, :], label = f"{T[i]} °F")
+for i in range(NT): axes[0].semilogx(v, eval(eos_model)()[i, :], label = f"{T[i]} °F")
 
 #[Subplot 2] for pressure-volume graph with vapor pressure values
-for i in range(NT): axes[1].semilogx(v, srk_eos()[i, :], label = f"{T[i]} °F")
-for i in range(NPS): axes[1].semilogx(srk_eos_psat()[i, :], PSEPlot[i, :], "o:k")
+for i in range(NT): axes[1].semilogx(v, eval(eos_model)()[i, :], label = f"{T[i]} °F")
+for i in range(NPS): axes[1].semilogx(eval(eos_model_psat)()[i, :], PSEPlot[i, :], "o:k")
 
 #[Subplot 3] for comparing estimated and calculated vapor pressure values
 axes[2].plot(psat_corr()[:,0], psat_corr()[:,1], label="PSat Correlated")
@@ -168,10 +238,10 @@ axes[2].scatter(T[0:np.size(PSE)], PSE, color="red", label="PSat Estimated")
 #Set rules for first two subplots
 for i in range(2):
     axes[i].set_box_aspect(1)
+    axes[i].set_xlim([1, V])
+    axes[i].set_ylim([0, 800])
     axes[i].set_xlabel('Volume, ft^3')
     axes[i].set_ylabel('Pressure, psi')
-    axes[i].set_xlim([1.1, V])
-    axes[i].set_ylim([0, 800])
     axes[i].legend(loc = 1)
 
 #Set rules for the third subplot
@@ -182,5 +252,7 @@ axes[2].legend(loc = 0)
 
 plt.show() #Render the figure
 
+print("Component :", component)
+print("Equation of State Model :", eos_model)
 print("Area Difference Error :", abs(adiff.T[0])) #Report Area difference between Pressure and PSat plots as error
 print("PSat Difference Error :", abs(psat_error())) #Report vapor pressure difference between correlated and estimated as error
