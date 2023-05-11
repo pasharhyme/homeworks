@@ -1,14 +1,14 @@
 #Equation of State Calculator for Pure Component Systems
 import numpy as np #Dependency => pip install numpy
 import matplotlib.pyplot as plt #Dependency => pip install matplotlib
-from src.selector import * #Imports relevant properties of hydrocarbon components
+from selector import * #Imports relevant properties of hydrocarbon components
 
 """
 Name of the component that will be examined.
-Refer to src/selector.py for available components.
+Refer to selector.py for available components.
 """
 component = "propane" # Needs manual input.
-properties = constants(component, C) #Fetch constants for the requested hydrocarbon
+properties = constants(component) #Fetch constants for the requested hydrocarbon
 
 """
 Type of the eos model that will perform the calculations.
@@ -30,9 +30,9 @@ OMEGA = properties[3] #1
 
 #Other Constants
 V = 100 #Magnitude of the volume vector
-T = np.array([60, 100, 140, 180, 206.6, 220]) #Temperature in F. Needs manual input.
+T = temp(component) #Temperature in F. Can be configured from selector.py
 NT = np.size(T) #Number of isotherms to be worked with
-PSE = np.array([108.83, 191.35, 311.86, 478.87]) #Estimated Saturaion Pressure values. Needs manual input.
+PSE = psat(component) #Estimated Saturaion Pressure values. Can be configured from selector.py
 NPS = np.size(PSE) #Number of PSat Estimation values
 
 R = 10.732 #psi*ft3/(lbmol*R)
@@ -238,7 +238,7 @@ axes[2].scatter(T[0:np.size(PSE)], PSE, color="red", label="PSat Estimated")
 #Set rules for first two subplots
 for i in range(2):
     axes[i].set_box_aspect(1)
-    axes[i].set_xlim([1, V])
+    axes[i].set_xlim([1.1, V])
     axes[i].set_ylim([0, 800])
     axes[i].set_xlabel('Volume, ft^3')
     axes[i].set_ylabel('Pressure, psi')
@@ -254,5 +254,7 @@ plt.show() #Render the figure
 
 print("Component :", component)
 print("Equation of State Model :", eos_model)
+print("Isotherms :", T)
+print("PSat Estimation Values :", PSE)
 print("Area Difference Error :", abs(adiff.T[0])) #Report Area difference between Pressure and PSat plots as error
-print("PSat Difference Error :", abs(psat_error())) #Report vapor pressure difference between correlated and estimated as error
+print("PSat Difference Error :", np.flipud(psat_error())) #Report vapor pressure difference between correlated and estimated as error
