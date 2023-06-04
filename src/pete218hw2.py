@@ -107,7 +107,6 @@ def zfactor_srk_eos():
     for i in range(3):
         roots[:,i] = np.real(np.roots(c[:,i]))
     print(roots)
-zfactor_srk_eos()
     
 #Figure generation and cleanup of unnecessary subplots
 FIGSIZE = 5 #Size of the figure    
