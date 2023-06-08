@@ -111,7 +111,7 @@ def zfactor_srk_eos():
     
     roots = np.zeros(np.size(p))
     for i in range(np.size(p)):
-        roots[i] = np.sort(np.real(np.roots(c[i,:])))[-1]
+        roots[i] = np.sort(np.real(np.roots(c[i,:])))[-1]   #HOW ???
     
     return p, roots
 
